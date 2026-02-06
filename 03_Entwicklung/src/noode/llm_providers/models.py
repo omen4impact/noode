@@ -7,25 +7,38 @@ All models optimized for coding.
 from typing import Dict, List
 
 # Built-in model definitions - users can override in config
+# Updated with latest models as of 2024/2025
 DEFAULT_MODELS: Dict[str, List[Dict]] = {
     "openai": [
+        {
+            "id": "gpt-5.2",
+            "name": "GPT-5.2",
+            "description": "Best for coding and agentic tasks (Latest)",
+            "context": 128000,
+        },
+        {
+            "id": "gpt-5",
+            "name": "GPT-5",
+            "description": "Intelligent reasoning model for coding",
+            "context": 128000,
+        },
+        {
+            "id": "gpt-5-mini",
+            "name": "GPT-5 Mini",
+            "description": "Fast, cost-efficient for well-defined tasks",
+            "context": 128000,
+        },
+        {
+            "id": "gpt-4.1",
+            "name": "GPT-4.1",
+            "description": "Smartest non-reasoning model",
+            "context": 128000,
+        },
         {
             "id": "gpt-4-turbo-preview",
             "name": "GPT-4 Turbo",
             "description": "Latest GPT-4, excellent for coding",
             "context": 128000,
-        },
-        {
-            "id": "gpt-4",
-            "name": "GPT-4",
-            "description": "Reliable coding model",
-            "context": 8192,
-        },
-        {
-            "id": "gpt-3.5-turbo",
-            "name": "GPT-3.5 Turbo",
-            "description": "Fast and cost-effective",
-            "context": 16385,
         },
     ],
     "anthropic": [
@@ -63,30 +76,41 @@ DEFAULT_MODELS: Dict[str, List[Dict]] = {
         },
     ],
     "openrouter": [
-        # Users can add ANY model from OpenRouter
-        # These are just sensible defaults
+        # 2024/2025 Models - Latest and best for coding
         {
-            "id": "openai/gpt-4-turbo-preview",
-            "name": "OR: GPT-4 Turbo",
-            "description": "Via OpenRouter",
+            "id": "openai/gpt-5.2",
+            "name": "OR: GPT-5.2 (Latest)",
+            "description": "Best for coding and agentic tasks - Feb 2025",
             "context": 128000,
         },
         {
-            "id": "anthropic/claude-3-opus",
-            "name": "OR: Claude 3 Opus",
-            "description": "Via OpenRouter",
+            "id": "anthropic/claude-4.6-opus",
+            "name": "OR: Claude 4.6 Opus",
+            "description": "Latest Opus with adaptive thinking - Feb 2026",
+            "context": 200000,
+        },
+        {
+            "id": "anthropic/claude-3.5-sonnet",
+            "name": "OR: Claude 3.5 Sonnet",
+            "description": "Balanced performance - 2024",
             "context": 200000,
         },
         {
             "id": "moonshotai/kimi-k2.5",
             "name": "OR: Kimi K2.5",
-            "description": "Moonshot AI - excellent for coding",
+            "description": "Excellent for coding - 256K context",
             "context": 256000,
         },
         {
-            "id": "anthropic/claude-3.5-sonnet",
-            "name": "OR: Claude 3.5 Sonnet",
-            "description": "Via OpenRouter",
+            "id": "openai/gpt-4.1",
+            "name": "OR: GPT-4.1",
+            "description": "Smartest non-reasoning model",
+            "context": 128000,
+        },
+        {
+            "id": "openai/o3-deep-research",
+            "name": "OR: o3 Deep Research",
+            "description": "Most powerful deep research model",
             "context": 200000,
         },
         {
@@ -98,8 +122,14 @@ DEFAULT_MODELS: Dict[str, List[Dict]] = {
         {
             "id": "google/gemini-1.5-pro",
             "name": "OR: Gemini 1.5 Pro",
-            "description": "Via OpenRouter",
+            "description": "1M context window",
             "context": 1000000,
+        },
+        {
+            "id": "openai/gpt-5-mini",
+            "name": "OR: GPT-5 Mini",
+            "description": "Fast and cost-efficient",
+            "context": 128000,
         },
     ],
 }
@@ -116,12 +146,12 @@ def get_default_model(provider: str) -> str:
     if models:
         return models[0]["id"]
     
-    # Fallback defaults
+    # Fallback defaults - Latest 2024/2025 models
     defaults = {
-        "openai": "gpt-4-turbo-preview",
-        "anthropic": "claude-3-opus-20240229",
+        "openai": "gpt-5.2",
+        "anthropic": "claude-4.6-opus",
         "google": "gemini-1.5-pro-latest",
-        "openrouter": "openai/gpt-4-turbo-preview",
+        "openrouter": "openai/gpt-5.2",
     }
     return defaults.get(provider, "")
 
