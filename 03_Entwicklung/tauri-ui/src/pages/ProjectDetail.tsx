@@ -14,7 +14,6 @@ import {
   Loader2,
 } from "lucide-react";
 import { useProject } from "../api/hooks";
-import type { Project } from "../types";
 
 interface ProjectDetailProps {
   projectId: string;

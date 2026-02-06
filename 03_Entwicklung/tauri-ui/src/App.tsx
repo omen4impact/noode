@@ -20,7 +20,6 @@ import {
 import { useProjects, useCreateProject, useAgents } from "./api/hooks";
 import { Knowledge } from "./pages/Knowledge";
 import { ProjectDetail } from "./pages/ProjectDetail";
-import { ComingSoon } from "./components/ComingSoon";
 
 // Navigation Items
 const navItems = [
