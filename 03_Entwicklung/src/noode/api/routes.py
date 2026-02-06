@@ -454,3 +454,81 @@ async def set_provider_key(provider: str, api_key: str = Body(..., embed=True)) 
         "provider": provider,
         "status": "API key saved",
     }
+
+
+# Model endpoints
+class ModelInfo(BaseModel):
+    """Information about an LLM model."""
+    id: str
+    name: str
+    description: str
+    context: int
+
+
+@router.get("/chat/providers/{provider}/models", response_model=List[ModelInfo], tags=["Chat"])
+async def get_provider_models(provider: str) -> List[ModelInfo]:
+    """Get available models for a provider."""
+    from noode.llm_providers.models import get_available_models
+    
+    models = get_available_models(provider)
+    return [
+        ModelInfo(
+            id=m["id"],
+            name=m["name"],
+            description=m["description"],
+            context=m["context"],
+        )
+        for m in models
+    ]
+
+
+class ProviderConfigRequest(BaseModel):
+    """Request to update provider configuration."""
+    model: str
+    temperature: float = Field(default=0.7, ge=0.0, le=1.0)
+    max_tokens: int = Field(default=4000, ge=100, le=8000)
+
+
+@router.get("/chat/providers/{provider}/config", tags=["Chat"])
+async def get_provider_config(provider: str) -> dict:
+    """Get configuration for a provider."""
+    from noode.llm_providers import get_llm_manager
+    from noode.llm_providers.models import get_default_model
+    
+    manager = get_llm_manager()
+    config = manager.config.get_provider_config(provider)
+    
+    return {
+        "provider": provider,
+        "model": config.get("model", get_default_model(provider)),
+        "temperature": config.get("temperature", 0.7),
+        "max_tokens": config.get("max_tokens", 4000),
+    }
+
+
+@router.post("/chat/providers/{provider}/config", tags=["Chat"])
+async def update_provider_config(provider: str, request: ProviderConfigRequest) -> dict:
+    """Update configuration for a provider."""
+    from noode.llm_providers import get_llm_manager
+    
+    manager = get_llm_manager()
+    
+    # Update config
+    if "providers" not in manager.config._config:
+        manager.config._config["providers"] = {}
+    if provider not in manager.config._config["providers"]:
+        manager.config._config["providers"][provider] = {}
+    
+    manager.config._config["providers"][provider]["model"] = request.model
+    manager.config._config["providers"][provider]["temperature"] = request.temperature
+    manager.config._config["providers"][provider]["max_tokens"] = request.max_tokens
+    
+    manager.config.save_config()
+    
+    return {
+        "provider": provider,
+        "model": request.model,
+        "temperature": request.temperature,
+        "max_tokens": request.max_tokens,
+        "status": "Configuration saved",
+    }
