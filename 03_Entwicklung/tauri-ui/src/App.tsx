@@ -16,14 +16,17 @@ import {
   AlertCircle,
   CheckCircle,
   BookOpen,
+  MessageSquare,
 } from "lucide-react";
 import { useProjects, useCreateProject, useAgents } from "./api/hooks";
 import { Knowledge } from "./pages/Knowledge";
 import { ProjectDetail } from "./pages/ProjectDetail";
+import { Chat } from "./pages/Chat";
 
 // Navigation Items
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", id: "dashboard" },
+  { icon: MessageSquare, label: "Chat", id: "chat" },
   { icon: PlusCircle, label: "Neues Projekt", id: "new-project" },
   { icon: FolderKanban, label: "Projekte", id: "projects" },
 ];
@@ -114,6 +117,7 @@ function App() {
           ) : (
             <>
               {activeTab === "dashboard" && <Dashboard key="dashboard" onNavigate={setActiveTab} />}
+              {activeTab === "chat" && <Chat key="chat" />}
               {activeTab === "new-project" && <NewProject key="new-project" />}
               {activeTab === "projects" && <Projects key="projects" onSelectProject={setSelectedProject} />}
               {activeTab === "knowledge" && <Knowledge key="knowledge" />}
