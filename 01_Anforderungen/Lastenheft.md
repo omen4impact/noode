@@ -56,6 +56,19 @@ Software-Entwicklung ist für nicht-technische Nutzer unzugänglich. Bestehende 
 | FA-32 | Disaster Recovery |
 | FA-33 | Kosten-Optimierung |
 
+### 3.5 LLM Provider Integration
+| ID | Anforderung |
+|----|-------------|
+| FA-40 | Unterstützung für OpenAI API |
+| FA-41 | Unterstützung für Anthropic API |
+| FA-42 | Unterstützung für Google Gemini API |
+| FA-43 | Unterstützung für OpenRouter API |
+| FA-44 | Direkte Provider-Integration (kein Wrapper) |
+| FA-45 | API-Key Management mit sicherer Speicherung |
+| FA-46 | Provider-Auswahl pro Projekt |
+| FA-47 | Fallback bei Provider-Fehlern |
+| FA-48 | Konfiguration über UI und Config-Dateien |
+
 ---
 
 ## 4. Nicht-funktionale Anforderungen

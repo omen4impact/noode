@@ -388,11 +388,66 @@ DELETE /api/v1/knowledge/{id}    # Delete document
 **Auto-Update:** Tauri Updater  
 **OS APIs:** Shell, Dialog, Clipboard
 
-### 6.3 Backend → LLM
+### 6.3 Backend → LLM Provider
 
-**Protokoll:** HTTP/REST (via LiteLLM)  
-**Providers:** OpenAI, Anthropic, Google, Local  
-**Timeout:** 30s Standard, 120s für komplexe Tasks
+**Architektur:** Direkte Provider-Integration (KEIN LiteLLM Wrapper)  
+**Protokoll:** HTTP/REST mit Provider-spezifischen APIs  
+**Timeout:** 30s Standard, 120s für komplexe Tasks  
+**Retry:** 3 Versuche mit Exponential Backoff
+
+#### 6.3.1 OpenAI
+- **API:** https://api.openai.com/v1/chat/completions
+- **Auth:** Bearer Token
+- **Models:** gpt-4, gpt-4-turbo, gpt-3.5-turbo
+- **SDK:** `openai` Python Package
+- **Key-Storage:** `~/.config/noode/openai.key`
+
+#### 6.3.2 Anthropic
+- **API:** https://api.anthropic.com/v1/messages
+- **Auth:** x-api-key Header
+- **Models:** claude-3-opus, claude-3-sonnet, claude-3-haiku
+- **SDK:** `anthropic` Python Package
+- **Key-Storage:** `~/.config/noode/anthropic.key`
+
+#### 6.3.3 Google (Gemini)
+- **API:** https://generativelanguage.googleapis.com/v1beta
+- **Auth:** API Key (Query Param)
+- **Models:** gemini-pro, gemini-pro-vision
+- **SDK:** `google-generativeai` Python Package
+- **Key-Storage:** `~/.config/noode/google.key`
+
+#### 6.3.4 OpenRouter
+- **API:** https://openrouter.ai/api/v1/chat/completions
+- **Auth:** Bearer Token
+- **Models:** Alle verfügbaren Models (OpenAI, Anthropic, etc.)
+- **SDK:** `requests` (Standard HTTP)
+- **Key-Storage:** `~/.config/noode/openrouter.key`
+
+#### 6.3.5 Fehlerbehandlung
+| Fehler | HTTP | Reaktion |
+|--------|------|----------|
+| Invalid Key | 401 | User Notification |
+| Rate Limit | 429 | Exponential Backoff |
+| Server Error | 500/503 | Fallback Provider |
+| Timeout | - | Retry mit 2x Timeout |
+
+#### 6.3.6 Konfiguration
+```yaml
+# ~/.config/noode/providers.yaml
+active_provider: openai
+providers:
+  openai:
+    model: gpt-4
+    temperature: 0.7
+    max_tokens: 4000
+  anthropic:
+    model: claude-3-opus
+    max_tokens: 4000
+  google:
+    model: gemini-pro
+  openrouter:
+    model: openai/gpt-4
+```
 
 ---
 
