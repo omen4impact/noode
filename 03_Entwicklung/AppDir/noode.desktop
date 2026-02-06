@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Noode
+GenericName=AI Development Platform
+Comment=Autonome Software-Entwicklung mit AI-Agents
+Exec=noode-desktop
+Icon=noode
+Categories=Development;IDE;
+Terminal=false
+StartupNotify=true
+Keywords=AI;Development;Agents;Code;

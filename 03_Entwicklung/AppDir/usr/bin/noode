@@ -1,0 +1,8 @@
+#!/bin/bash
+SELF=$(readlink -f "$0")
+HERE=${SELF%/*}
+LIB="${HERE}/../lib/python3/dist-packages"
+
+export PYTHONPATH="${LIB}:${PYTHONPATH}"
+
+exec python3 -m noode.cli "$@"

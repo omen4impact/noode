@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { useProjects, useCreateProject, useAgents } from "./api/hooks";
 import { Knowledge } from "./pages/Knowledge";
+import { ProjectDetail } from "./pages/ProjectDetail";
+import { ComingSoon } from "./components/ComingSoon";
 
 // Navigation Items
 const navItems = [
@@ -47,6 +49,7 @@ const quickActions = [
 
 function App() {
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [selectedProject, setSelectedProject] = useState<string | null>(null);
 
   return (
     <div className="flex h-screen bg-background-main">
@@ -103,10 +106,20 @@ function App() {
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         <AnimatePresence mode="wait">
-          {activeTab === "dashboard" && <Dashboard key="dashboard" onNavigate={setActiveTab} />}
-          {activeTab === "new-project" && <NewProject key="new-project" />}
-          {activeTab === "projects" && <Projects key="projects" />}
-          {activeTab === "knowledge" && <Knowledge key="knowledge" />}
+          {selectedProject ? (
+            <ProjectDetail
+              key="project-detail"
+              projectId={selectedProject}
+              onBack={() => setSelectedProject(null)}
+            />
+          ) : (
+            <>
+              {activeTab === "dashboard" && <Dashboard key="dashboard" onNavigate={setActiveTab} />}
+              {activeTab === "new-project" && <NewProject key="new-project" />}
+              {activeTab === "projects" && <Projects key="projects" onSelectProject={setSelectedProject} />}
+              {activeTab === "knowledge" && <Knowledge key="knowledge" />}
+            </>
+          )}
         </AnimatePresence>
       </main>
     </div>
@@ -422,7 +435,7 @@ function NewProject() {
 }
 
 // Projects Component
-function Projects() {
+function Projects({ onSelectProject }: { onSelectProject: (id: string) => void }) {
   const { data: projects, isLoading, error } = useProjects();
   const [searchTerm, setSearchTerm] = useState("");
   const deleteProject = useDeleteProject();
@@ -526,7 +539,10 @@ function Projects() {
                 }`}>
                   {project.status}
                 </span>
-                <button className="text-primary font-medium hover:underline">
+                <button 
+                  onClick={() => onSelectProject(project.project_id)}
+                  className="text-primary font-medium hover:underline"
+                >
                   Öffnen
                 </button>
                 <button 

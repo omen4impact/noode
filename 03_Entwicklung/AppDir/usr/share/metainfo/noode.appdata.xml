@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>dev.noode.Noode</id>
+  <name>Noode</name>
+  <summary>Autonome AI Development Platform</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <description>
+    <p>
+      Noode ist eine autonome Entwicklungsplattform, die AI-Agents nutzt
+      um Software zu entwickeln. Beschreibe einfach was du möchtest und
+      Noode's spezialisierte Agents designen, implementieren und reviewen
+      deine Anwendung.
+    </p>
+  </description>
+  <launchable type="desktop-id">noode.desktop</launchable>
+  <url type="homepage">https://noode.dev</url>
+  <releases>
+    <release version="0.5.0" date="2026-02-06"/>
+  </releases>
+</component>

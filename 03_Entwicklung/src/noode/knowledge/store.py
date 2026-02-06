@@ -12,6 +12,7 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime
 import hashlib
 import uuid
+import math
 
 try:
     from qdrant_client import QdrantClient
@@ -212,20 +213,23 @@ class KnowledgeStore:
                 logger.error("search_failed", error=str(e))
                 return []
         else:
-            # Search in memory (simple cosine similarity)
+            # Search in memory (simple cosine similarity using pure Python)
             results = []
             for doc in self._memory_store.values():
                 if doc_type and doc.doc_type != doc_type:
                     continue
                 
                 if doc.embedding:
-                    # Calculate cosine similarity
-                    doc_emb = np.array(doc.embedding)
-                    query_emb = np.array(query_embedding)
+                    # Calculate cosine similarity manually
+                    doc_emb = doc.embedding
+                    query_emb = query_embedding
                     
-                    dot_product = np.dot(doc_emb, query_emb)
-                    norm_doc = np.linalg.norm(doc_emb)
-                    norm_query = np.linalg.norm(query_emb)
+                    # Dot product
+                    dot_product = sum(a * b for a, b in zip(doc_emb, query_emb))
+                    
+                    # Norms
+                    norm_doc = math.sqrt(sum(x * x for x in doc_emb))
+                    norm_query = math.sqrt(sum(x * x for x in query_emb))
                     
                     if norm_doc > 0 and norm_query > 0:
                         similarity = dot_product / (norm_doc * norm_query)

@@ -1,0 +1,11 @@
+#!/bin/bash
+SELF=$(readlink -f "$0")
+HERE=${SELF%/*}
+
+export PATH="${HERE}/usr/bin:${PATH}"
+export PYTHONPATH="${HERE}/usr/lib/python3/dist-packages:${PYTHONPATH}"
+export XDG_DATA_DIRS="${HERE}/usr/share:${XDG_DATA_DIRS}"
+export GI_TYPELIB_PATH="/usr/lib/x86_64-linux-gnu/girepository-1.0:${GI_TYPELIB_PATH}"
+export LD_LIBRARY_PATH="/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}"
+
+exec "${HERE}/usr/bin/noode-desktop" "$@"
