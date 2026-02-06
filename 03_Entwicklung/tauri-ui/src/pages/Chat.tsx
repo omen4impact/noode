@@ -5,7 +5,6 @@ import {
   Bot,
   User,
   Loader2,
-  Code,
   FileCode,
   Sparkles,
   Copy,
