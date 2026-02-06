@@ -1,0 +1,96 @@
+version: '3.8'
+
+services:
+  # Noode Backend API
+  noode-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: noode-api
+    ports:
+      - "8000:8000"
+    environment:
+      - NOODE_ENV=production
+      - NOODE_QDRANT_HOST=qdrant
+      - NOODE_QDRANT_PORT=6333
+      - NOODE_DB_URL=sqlite:///data/noode.db
+    volumes:
+      - noode-data:/app/data
+    networks:
+      - noode-network
+    depends_on:
+      qdrant:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Qdrant Vector Database
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: noode-qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - qdrant-storage:/qdrant/storage
+    environment:
+      - QDRANT__SERVICE__HTTP_PORT=6333
+      - QDRANT__SERVICE__GRPC_PORT=6334
+    networks:
+      - noode-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6333/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Optional: PostgreSQL for production
+  postgres:
+    image: postgres:15-alpine
+    container_name: noode-postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_USER=noode
+      - POSTGRES_PASSWORD=noode_secret
+      - POSTGRES_DB=noode
+    networks:
+      - noode-network
+    restart: unless-stopped
+    profiles:
+      - full
+
+  # Optional: Redis for caching
+  redis:
+    image: redis:7-alpine
+    container_name: noode-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - noode-network
+    restart: unless-stopped
+    profiles:
+      - full
+
+volumes:
+  qdrant-storage:
+    driver: local
+  noode-data:
+    driver: local
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+
+networks:
+  noode-network:
+    driver: bridge
