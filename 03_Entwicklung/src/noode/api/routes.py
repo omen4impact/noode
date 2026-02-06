@@ -1,8 +1,9 @@
 """API routes for Noode."""
 
-from typing import Any
+from typing import Any, List, Optional
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Body
+from pydantic import BaseModel, Field
 
 from noode.api.models import (
     AgentStatus,
@@ -332,3 +333,124 @@ async def get_knowledge_stats() -> KnowledgeStats:
         document_types=stats.get("document_types", {}),
         storage_size_mb=stats.get("storage_size_mb"),
     )
+
+
+# Chat & LLM Endpoints
+class ChatMessage(BaseModel):
+    """A chat message."""
+    role: str = Field(..., description="Role: system, user, or assistant")
+    content: str = Field(..., min_length=1)
+
+
+class ChatRequest(BaseModel):
+    """Request to send chat message."""
+    messages: List[ChatMessage] = Field(..., min_length=1)
+    provider: Optional[str] = Field(default=None, description="LLM provider to use")
+    model: Optional[str] = Field(default=None, description="Model to use")
+
+
+class ChatResponse(BaseModel):
+    """Response from chat."""
+    content: str
+    model: str
+    provider: str
+    error: Optional[str] = None
+
+
+class ProviderStatus(BaseModel):
+    """Status of an LLM provider."""
+    name: str
+    available: bool
+    configured: bool
+
+
+@router.post("/chat", response_model=ChatResponse, tags=["Chat"])
+async def chat(request: ChatRequest) -> ChatResponse:
+    """Send chat message to LLM provider."""
+    from noode.llm_providers import get_llm_manager, LLMMessage
+    
+    manager = get_llm_manager()
+    
+    # Convert to LLMMessage format
+    messages = [
+        LLMMessage(role=msg.role, content=msg.content)
+        for msg in request.messages
+    ]
+    
+    # Send to provider
+    response = manager.chat(
+        messages=messages,
+        provider=request.provider,
+        model=request.model,
+    )
+    
+    return ChatResponse(
+        content=response.content,
+        model=response.model,
+        provider=response.provider,
+        error=response.error,
+    )
+
+
+@router.get("/chat/providers", response_model=List[ProviderStatus], tags=["Chat"])
+async def get_providers() -> List[ProviderStatus]:
+    """Get list of available LLM providers."""
+    from noode.llm_providers import get_llm_manager
+    
+    manager = get_llm_manager()
+    providers = []
+    
+    for name in ["openai", "anthropic", "google", "openrouter"]:
+        provider = manager.providers.get(name)
+        if provider:
+            providers.append(ProviderStatus(
+                name=name,
+                available=provider.is_available(),
+                configured=provider.config.get_api_key(name) is not None,
+            ))
+    
+    return providers
+
+
+@router.post("/chat/providers/{provider}/test", tags=["Chat"])
+async def test_provider(provider: str) -> dict:
+    """Test if a provider is working."""
+    from noode.llm_providers import get_llm_manager
+    
+    manager = get_llm_manager()
+    success = manager.test_provider(provider)
+    
+    return {
+        "provider": provider,
+        "success": success,
+        "message": "Provider is working" if success else "Provider test failed",
+    }
+
+
+@router.post("/chat/providers/{provider}/key", tags=["Chat"])
+async def set_provider_key(provider: str, api_key: str = Body(..., embed=True)) -> dict:
+    """Set API key for a provider."""
+    from noode.llm_providers import get_llm_manager
+    
+    manager = get_llm_manager()
+    manager.config.set_api_key(provider, api_key)
+    
+    # Re-initialize provider
+    if provider in manager.providers:
+        if provider == "openai":
+            from noode.llm_providers import OpenAIProvider
+            manager.providers[provider] = OpenAIProvider(manager.config)
+        elif provider == "anthropic":
+            from noode.llm_providers import AnthropicProvider
+            manager.providers[provider] = AnthropicProvider(manager.config)
+        elif provider == "google":
+            from noode.llm_providers import GoogleProvider
+            manager.providers[provider] = GoogleProvider(manager.config)
+        elif provider == "openrouter":
+            from noode.llm_providers import OpenRouterProvider
+            manager.providers[provider] = OpenRouterProvider(manager.config)
+    
+    return {
+        "provider": provider,
+        "status": "API key saved",
+    }

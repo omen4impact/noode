@@ -10,6 +10,7 @@ import {
   Sparkles,
   Copy,
   Check,
+  AlertCircle,
 } from "lucide-react";
 import { useAgents } from "../api/hooks";
 
@@ -20,6 +21,7 @@ interface Message {
   agent?: string;
   timestamp: Date;
   code?: string;
+  error?: boolean;
 }
 
 export function Chat() {
@@ -60,38 +62,86 @@ export function Chat() {
     setInput("");
     setIsLoading(true);
 
-    // Simulate agent thinking
-    setTimeout(() => {
-      const agentResponses = [
+    try {
+      // Build conversation history
+      const conversationHistory = messages.map((msg) => ({
+        role: msg.role,
+        content: msg.content,
+      }));
+
+      // Add current user message
+      conversationHistory.push({
+        role: "user",
+        content: input,
+      });
+
+      // System prompt
+      const messagesWithSystem = [
         {
-          agent: "requirements_agent",
-          content: "Ich analysiere deine Anforderungen...",
+          role: "system",
+          content: "Du bist Noode, ein AI-Entwicklungsteam. Du hilfst beim Erstellen von Software-Projekten. Wenn du Code generierst, füge ihn in Code-Blöcken hinzu. Sei konkret und praktisch.",
         },
-        {
-          agent: "research_agent",
-          content: "Lass mich die beste Technologie dafür recherchieren...",
-        },
-        {
-          agent: "backend_agent",
-          content: "Ich erstelle die API-Struktur für dich.",
-          code: `// API Endpoint\napp.post('/api/projects', async (req, res) => {\n  const project = await createProject(req.body);\n  res.json(project);\n});`,
-        },
+        ...conversationHistory,
       ];
 
-      const randomResponse = agentResponses[Math.floor(Math.random() * agentResponses.length)];
+      // Call backend API
+      const response = await fetch("http://localhost:8000/api/v1/chat", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messages: messagesWithSystem,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("API request failed");
+      }
+
+      const data = await response.json();
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Extract code blocks from response
+      let content = data.content;
+      let code: string | undefined;
+
+      const codeBlockMatch = content.match(/```(?:\w+)?\n?([\s\S]*?)```/);
+      if (codeBlockMatch) {
+        code = codeBlockMatch[1].trim();
+        // Remove code block from content for cleaner display
+        content = content.replace(/```(?:\w+)?\n?[\s\S]*?```/, "[Code wurde generiert]");
+      }
 
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: randomResponse.content,
-        agent: randomResponse.agent,
+        content: content,
+        agent: data.provider || "assistant",
         timestamp: new Date(),
-        code: randomResponse.code,
+        code: code,
       };
 
       setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error("Chat error:", error);
+      
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "Entschuldigung, es gab einen Fehler bei der Verarbeitung deiner Anfrage. Bitte überprüfe:\n\n1. Ist das Backend gestartet? (python -m uvicorn noode.api.server:app)\n2. Ist ein API-Key konfiguriert? (Einstellungen → API Keys)",
+        agent: "system",
+        timestamp: new Date(),
+        error: true,
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
       setIsLoading(false);
-    }, 2000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -110,6 +160,10 @@ export function Chat() {
   const getAgentName = (agentId?: string) => {
     if (!agentId) return "Noode Team";
     const names: Record<string, string> = {
+      openai: "OpenAI (GPT-4)",
+      anthropic: "Anthropic (Claude)",
+      google: "Google (Gemini)",
+      openrouter: "OpenRouter",
       orchestrator: "Orchestrator",
       requirements_agent: "Requirements Agent",
       research_agent: "Research Agent",
@@ -118,12 +172,17 @@ export function Chat() {
       database_agent: "Database Agent",
       security_agent: "Security Agent",
       testing_agent: "Testing Agent",
+      system: "System",
     };
     return names[agentId] || agentId;
   };
 
   const getAgentColor = (agentId?: string) => {
     const colors: Record<string, string> = {
+      openai: "bg-green-500",
+      anthropic: "bg-orange-500",
+      google: "bg-blue-500",
+      openrouter: "bg-purple-500",
       orchestrator: "bg-purple-500",
       requirements_agent: "bg-blue-500",
       research_agent: "bg-green-500",
@@ -132,6 +191,7 @@ export function Chat() {
       database_agent: "bg-cyan-500",
       security_agent: "bg-red-500",
       testing_agent: "bg-yellow-500",
+      system: "bg-gray-500",
     };
     return colors[agentId || ""] || "bg-primary";
   };
@@ -191,11 +251,15 @@ export function Chat() {
                 className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
                   message.role === "user"
                     ? "bg-primary text-white"
+                    : message.error
+                    ? "bg-red-500 text-white"
                     : getAgentColor(message.agent)
                 }`}
               >
                 {message.role === "user" ? (
                   <User className="w-5 h-5" />
+                ) : message.error ? (
+                  <AlertCircle className="w-5 h-5" />
                 ) : (
                   <Bot className="w-5 h-5 text-white" />
                 )}
@@ -209,7 +273,9 @@ export function Chat() {
               >
                 {/* Agent Name */}
                 {message.role === "assistant" && (
-                  <span className="text-xs text-text-muted mb-1 block">
+                  <span className={`text-xs mb-1 block ${
+                    message.error ? "text-red-500" : "text-text-muted"
+                  }`}>
                     {getAgentName(message.agent)}
                   </span>
                 )}
@@ -219,6 +285,8 @@ export function Chat() {
                   className={`rounded-2xl p-4 ${
                     message.role === "user"
                       ? "bg-primary text-white rounded-br-md"
+                      : message.error
+                      ? "bg-red-50 border border-red-200 text-red-800 rounded-bl-md"
                       : "bg-white border border-border rounded-bl-md"
                   }`}
                 >
@@ -230,7 +298,7 @@ export function Chat() {
                       <div className="flex items-center justify-between px-3 py-2 bg-gray-800 border-b border-gray-700">
                         <div className="flex items-center gap-2 text-gray-400 text-xs">
                           <FileCode className="w-4 h-4" />
-                          <span>Generated Code</span>
+                          <span>Generierter Code</span>
                         </div>
                         <button
                           onClick={() => copyCode(message.code!, message.id)}
