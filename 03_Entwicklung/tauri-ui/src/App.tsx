@@ -22,6 +22,7 @@ import { useProjects, useCreateProject, useAgents } from "./api/hooks";
 import { Knowledge } from "./pages/Knowledge";
 import { ProjectDetail } from "./pages/ProjectDetail";
 import { Chat } from "./pages/Chat";
+import { Settings as SettingsPage } from "./pages/Settings";
 
 // Navigation Items
 const navItems = [
@@ -98,7 +99,10 @@ function App() {
 
         {/* Footer */}
         <div className="p-4 border-t border-border">
-          <button className="sidebar-item w-full">
+          <button 
+            onClick={() => setActiveTab("settings")}
+            className={`sidebar-item w-full ${activeTab === "settings" ? "active" : ""}`}
+          >
             <Settings className="w-5 h-5" />
             <span>Einstellungen</span>
           </button>
@@ -121,6 +125,7 @@ function App() {
               {activeTab === "new-project" && <NewProject key="new-project" />}
               {activeTab === "projects" && <Projects key="projects" onSelectProject={setSelectedProject} />}
               {activeTab === "knowledge" && <Knowledge key="knowledge" />}
+              {activeTab === "settings" && <SettingsPage key="settings" />}
             </>
           )}
         </AnimatePresence>
