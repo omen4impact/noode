@@ -51,8 +51,16 @@ export function Settings() {
 
   const fetchData = async () => {
     try {
-      // Fetch providers
-      const providersRes = await fetch("http://localhost:8000/api/v1/chat/providers");
+      // Fetch providers with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const providersRes = await fetch("http://localhost:8000/api/v1/chat/providers", {
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+      
+      if (!providersRes.ok) throw new Error("Failed to fetch providers");
       const providersData = await providersRes.json();
       setProviders(providersData);
 
@@ -180,6 +188,41 @@ export function Settings() {
       <div className="flex items-center justify-center h-full">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
+    );
+  }
+
+  // Show error if no providers loaded
+  if (providers.length === 0) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-8 max-w-4xl"
+      >
+        <div className="card bg-red-50 border-red-200 p-8 text-center">
+          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
+          <h2 className="text-xl font-bold text-red-900 mb-2">
+            Backend nicht erreichbar
+          </h2>
+          <p className="text-red-700 mb-4">
+            Das Backend scheint nicht zu laufen oder es gab einen Fehler beim Laden der Daten.
+          </p>
+          <div className="text-sm text-red-600 bg-red-100 rounded-lg p-4 text-left">
+            <p className="font-semibold mb-2">Bitte überprüfe:</p>
+            <ol className="list-decimal list-inside space-y-1">
+              <li>Ist das Backend gestartet?</li>
+              <li>Läuft es auf http://localhost:8000?</li>
+              <li>Gibt es Fehler in der Browser Console (F12)?</li>
+            </ol>
+          </div>
+          <button
+            onClick={() => fetchData()}
+            className="btn-primary mt-6"
+          >
+            Erneut versuchen
+          </button>
+        </div>
+      </motion.div>
     );
   }
 
